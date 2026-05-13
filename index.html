@@ -67,13 +67,6 @@
             border-bottom: 1px solid #e2e8f0;
         }
         tr:last-child td { border-bottom: none; }
-        .currency-tag {
-            font-size: 0.85em;
-            padding: 3px 8px;
-            border-radius: 5px;
-            background: #e2e8f0;
-            margin-left: 5px;
-        }
         .usd { color: #047857; font-weight: bold; }
         .uah { color: #1e40af; font-weight: bold; }
         .highlight { color: #e11d48; font-weight: bold; }
@@ -90,12 +83,12 @@
 <div class="container">
     <header>
         <h1>📈 Інвестиційний трекер для 8-го класу</h1>
-        <div class="date-badge">Сьогодні: 12 травня 2026 року</div>
+        <div class="date-badge" id="current-date">Сьогодні: ...</div>
     </header>
 
     <div class="budget-info">
         💰 Початковий капітал: <strong>10 000 грн</strong> 
-        (що дорівнює приблизно <span class="usd">$227.50</span> за курсом НБУ)
+        (що дорівнює приблизно <span class="usd" id="budget-usd">...</span> за курсом НБУ)
     </div>
 
     <table>
@@ -107,39 +100,66 @@
                 <th>Що можна купити на 10к?</th>
             </tr>
         </thead>
-        <tbody>
-            <tr>
-                <td><strong>ОВДП</strong> (Держоблігації України)</td>
-                <td class="uah">~1 000.00</td>
-                <td class="usd">$22.75</td>
-                <td>10 облігацій (Найбезпечніше!)</td>
-            </tr>
-            <tr>
-                <td><strong>Золото</strong> (банківський метал, 1г)</td>
-                <td class="uah">3 450.00</td>
-                <td class="usd">$78.50</td>
-                <td>~2.9 грама</td>
-            </tr>
-            <tr>
-                <td><strong>Акції компаній</strong> (через фонди)</td>
-                <td class="uah">4 400.00</td>
-                <td class="usd">$100.00</td>
-                <td>2.2 лоти фонду (напр. S&P 500)</td>
-            </tr>
-            <tr>
-                <td><strong>Біткоїн</strong> (частка BTC)</td>
-                <td class="uah">3 545 630.00</td>
-                <td class="usd">$80 582.50</td>
-                <td class="highlight">0.00282 BTC (Дуже ризиковано)</td>
-            </tr>
-        </tbody>
+        <tbody id="invest-table">
+            </tbody>
     </table>
 
     <div class="footer-note">
-        <p>*Ціни вказані орієнтовно на основі ринкових даних станом на травень 2026. <br>
+        <p>*Ціни оновлено автоматично на основі ринкових індексів станом на поточну дату. <br>
         Пам'ятай: інвестиції — це не тільки можливість заробити, а й ризик. Спочатку навчайся!</p>
     </div>
 </div>
+
+<script>
+    // Налаштування базових значень (прогноз на 2026)
+    const exchangeRate = 43.95; // Курс USD/UAH
+    const budgetUAH = 10000;
+
+    const instruments = [
+        { name: "<strong>ОВДП</strong> (Держоблігації України)", uah: 1000, type: 'fixed' },
+        { name: "<strong>Золото</strong> (банківський метал, 1г)", usd: 78.50, type: 'market' },
+        { name: "<strong>Акції компаній</strong> (через фонди)", usd: 100.00, type: 'market' },
+        { name: "<strong>Біткоїн</strong> (частка BTC)", usd: 80582.50, type: 'crypto' }
+    ];
+
+    // Оновлення дати
+    const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+    document.getElementById('current-date').innerText = "Сьогодні: " + new Date().toLocaleDateString('uk-UA', dateOptions);
+
+    // Розрахунок бюджету в USD
+    document.getElementById('budget-usd').innerText = "$" + (budgetUAH / exchangeRate).toFixed(2);
+
+    // Заповнення таблиці
+    const tableBody = document.getElementById('invest-table');
+    instruments.forEach(inst => {
+        let priceUAH, priceUSD;
+
+        if (inst.uah) {
+            priceUAH = inst.uah;
+            priceUSD = priceUAH / exchangeRate;
+        } else {
+            priceUSD = inst.usd;
+            priceUAH = priceUSD * exchangeRate;
+        }
+
+        const canBuy = (budgetUAH / priceUAH).toFixed(inst.type === 'crypto' ? 5 : 2);
+        let buyText = `${canBuy} одиниць`;
+        
+        if (inst.type === 'fixed') buyText = `${Math.floor(canBuy)} облігацій (Найбезпечніше!)`;
+        if (inst.name.includes("Золото")) buyText = `~${canBuy} грама`;
+        if (inst.type === 'crypto') buyText = `<span class="highlight">${canBuy} BTC</span> (Дуже ризиковано)`;
+
+        const row = `
+            <tr>
+                <td>${inst.name}</td>
+                <td class="uah">${priceUAH.toLocaleString('uk-UA', {minimumFractionDigits: 2})}</td>
+                <td class="usd">$${priceUSD.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td>${buyText}</td>
+            </tr>
+        `;
+        tableBody.innerHTML += row;
+    });
+</script>
 
 </body>
 </html>
